@@ -37,6 +37,31 @@ config_ready() {
     [ -n "$CF_API_TOKEN" ] && [ -n "$CF_ZONE_ID" ]
 }
 
+# 合法的全局配置键
+CONFIG_KEYS="CF_API_TOKEN CF_ZONE_ID CF_ZONE_NAME INTERVAL UPDATE_MIRROR"
+
+config_key_valid() {
+    for _ck in $CONFIG_KEYS; do [ "$_ck" = "$1" ] && return 0; done
+    return 1
+}
+
+# 脱敏展示当前配置（Token 只露首尾各 4 位）
+config_show() {
+    config_load
+    if [ -n "$CF_API_TOKEN" ]; then
+        _head=$(printf '%s' "$CF_API_TOKEN" | cut -c1-4)
+        _tail=$(printf '%s' "$CF_API_TOKEN" | sed -E 's/.*(.{4})$/\1/')
+        _tmask="${_head}****${_tail}"
+    else
+        _tmask="(未设置)"
+    fi
+    printf 'CF_API_TOKEN  = %s\n' "$_tmask"
+    printf 'CF_ZONE_ID    = %s\n' "${CF_ZONE_ID:-(未设置)}"
+    printf 'CF_ZONE_NAME  = %s\n' "${CF_ZONE_NAME:-(未设置)}"
+    printf 'INTERVAL      = %s (分钟)\n' "$INTERVAL"
+    printf 'UPDATE_MIRROR = %s\n' "$UPDATE_MIRROR"
+}
+
 # ---------------------------------------------------------------------------
 # 记录表 records.conf
 # 每行：name|type|source|param|ttl|proxied|record_id
