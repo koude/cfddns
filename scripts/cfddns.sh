@@ -21,6 +21,7 @@ export CFDDNS_ROOT
 . "$SCRIPTS_DIR/ipsource.sh"
 . "$SCRIPTS_DIR/cloudflare.sh"
 . "$SCRIPTS_DIR/core.sh"
+. "$SCRIPTS_DIR/service.sh"
 
 usage() {
     cat <<EOF
@@ -34,6 +35,7 @@ cfddns $(read_version) —— Cloudflare DDNS
                                 --force   忽略本地缓存强制推送
   version                     显示版本
   help                        显示本帮助
+  uninstall                   移除 cron（程序文件保留，提示如何彻底删除）
   menu                        交互式菜单（Phase 3）
   update                      在线更新（Phase 4）
 
@@ -52,5 +54,9 @@ case "$cmd" in
     help|-h|--help|"")     usage ;;
     menu)                  echo "菜单 TUI 将在 Phase 3 提供。" ;;
     update)                echo "在线更新将在 Phase 4 提供。" ;;
+    uninstall)
+        service_cron_remove
+        echo "已移除 cron。程序文件仍在 ${CFDDNS_ROOT}；如需彻底删除：rm -rf ${CFDDNS_ROOT}"
+        ;;
     *)                     echo "未知命令: $cmd" >&2; usage; exit 1 ;;
 esac
