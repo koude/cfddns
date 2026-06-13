@@ -1,0 +1,18 @@
+# CFDDNS 全局配置示例
+# 复制为同目录下的 config 后填写（菜单 TUI 也会写入这里）。
+# 形式为 KEY="value"，会被脚本 source 读取。
+
+# Cloudflare Scoped API Token：权限需含「该 Zone 的 DNS:Edit + Zone:Read」
+CF_API_TOKEN=""
+
+# 目标 Zone 的 ID（在 Cloudflare 域名概览右下角，或菜单里选 Zone 自动填入）
+CF_ZONE_ID=""
+
+# Zone 名称（仅展示用）
+CF_ZONE_NAME=""
+
+# 定时更新间隔（分钟）
+INTERVAL="5"
+
+# 在线更新镜像源（raw 根地址，结尾不带 /）
+UPDATE_MIRROR="https://raw.githubusercontent.com/USER/cfddns/main"

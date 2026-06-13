@@ -1,0 +1,9 @@
+# 运行期数据（含密钥），绝不提交
+conf/config
+conf/records.conf
+conf/state
+conf/*.log
+conf/*.log.*
+*.tmp.*
+
+# 示例文件保留（conf/config.example、conf/records.example 不在忽略之列）

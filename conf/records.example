@@ -1,0 +1,20 @@
+# CFDDNS 记录表示例
+# 复制为同目录下的 records.conf 后填写（菜单 TUI 也会维护这里）。
+#
+# 每行一条，竖线分隔：
+#   name | type | source | param | ttl | proxied | record_id
+#
+#   name      要更新的完整域名，如 home.example.com
+#   type      A | AAAA
+#   source    wan4  = 路由器公网 IPv4 出口（用于 A 记录）
+#             host6 = 按内网主机取其公网 IPv6 GUA（用于 AAAA 记录）
+#   param     wan4  留空；
+#             host6 填「内网IPv4」或「MAC」，可追加 ",固定后缀" 精确过滤，
+#                   如  192.168.31.50,::100   或   aa:bb:cc:dd:ee:ff
+#   ttl       秒，建议 60；proxied 直连内网主机务必 false
+#   record_id 留空，首次运行自动回填缓存
+#
+# 示例：A 记录指路由器公网 IPv4
+home.example.com|A|wan4||60|false|
+# 示例：AAAA 记录指内网某台主机（内网 IP 固定为 192.168.31.50）
+home.example.com|AAAA|host6|192.168.31.50|60|false|
