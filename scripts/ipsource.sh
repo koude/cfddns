@@ -65,19 +65,34 @@ arp_mac() {
 }
 
 # ---------------------------------------------------------------------------
-# 邻居表中某 MAC 的全局 IPv6（2000::/3），EUI-64 稳定地址优先排前
+# 邻居表中某 MAC 的公网 IPv6（2000::/3），排除 FAILED/INCOMPLETE 及无 lladdr 的项
 # ---------------------------------------------------------------------------
 neigh_gua_by_mac() {
-    _mac=$(normalize_mac "$1")
-    _list=$(ip -6 neigh 2>/dev/null | awk -v m="$_mac" '
-        { ll=""
+    ip -6 neigh 2>/dev/null | awk -v m="$(normalize_mac "$1")" '
+        { ll=""; st=$NF
           for (i=1;i<=NF;i++) if ($i=="lladdr") ll=$(i+1)
-          if (tolower(ll)==m) print $1
-        }' | awk '/^[23]/' | sort -u)
-    [ -n "$_list" ] || return 1
-    # EUI-64（含 ff:fe）通常是稳定地址，排前；隐私临时地址排后
-    printf '%s\n' "$_list" | grep -i 'ff:fe'
-    printf '%s\n' "$_list" | grep -iv 'ff:fe'
+          if (tolower(ll)==m && $1 ~ /^[23]/ && st!="FAILED" && st!="INCOMPLETE") print $1
+        }' | sort -u
+}
+
+# 取地址的 /64 前缀（前 4 组，小写）。适用于前 4 组无零压缩的常规 ISP /64。
+_p64() {
+    printf '%s' "$1" | awk -F: '{printf "%s:%s:%s:%s\n", tolower($1), tolower($2), tolower($3), tolower($4)}'
+}
+
+# 某 MAC 在邻居表里所处的网卡（取首个，如 br-lan）
+_neigh_dev() {
+    ip -6 neigh 2>/dev/null | awk -v m="$(normalize_mac "$1")" '
+        { ll=""; dev=""
+          for (i=1;i<=NF;i++) { if ($i=="dev") dev=$(i+1); if ($i=="lladdr") ll=$(i+1) }
+          if (tolower(ll)==m && dev!="") { print dev; exit } }'
+}
+
+# 某网卡当前的全局 /64 前缀（前 4 组），排除 deprecated
+_lan_prefixes() {
+    ip -6 addr show dev "$1" scope global 2>/dev/null \
+        | awk '/inet6/ && $0 !~ /deprecated/ {print $2}' | cut -d/ -f1 \
+        | while IFS= read -r _a; do [ -n "$_a" ] && _p64 "$_a"; done
 }
 
 # 在候选地址里按固定后缀精确匹配（如 ::100 -> 末组 100）
@@ -88,9 +103,11 @@ match_suffix() {
 
 # ---------------------------------------------------------------------------
 # host6：取内网主机的公网 GUA
-#   param 形如  192.168.31.50        （内网IPv4）
-#               192.168.31.50,::100  （内网IPv4 + 固定后缀，多候选时精确过滤）
-#               aa:bb:cc:dd:ee:ff    （直接给 MAC）
+#   param 形如  192.168.50.3        （内网IPv4）
+#               192.168.50.3,::3    （内网IPv4 + 固定后缀，多候选时精确过滤）
+#               aa:bb:cc:dd:ee:ff   （直接给 MAC）
+# 步骤：解析 MAC → 邻居表取候选 → 按当前 LAN 前缀过滤（丢弃换前缀后残留的旧地址）
+#       → EUI-64 优先 → 有后缀则精确匹配。
 # ---------------------------------------------------------------------------
 ipsource_host6() {
     _param=$1
@@ -106,13 +123,33 @@ ipsource_host6() {
             return 1
         }
     fi
+    _mac=$(normalize_mac "$_mac")
     [ -n "$_mac" ] || return 1
 
-    _cands=$(neigh_gua_by_mac "$_mac") || {
+    _cands=$(neigh_gua_by_mac "$_mac")
+    [ -n "$_cands" ] || {
         log_warn "host6: 邻居表未找到 MAC $_mac 的公网 IPv6（需主机近期有 IPv6 流量）"
         return 1
     }
-    log_info "host6: MAC=$_mac 候选GUA=[$(printf '%s' "$_cands" | tr '\n' ' ')]"
+
+    # 按当前 LAN 前缀过滤，丢弃 ISP 换前缀后残留的旧地址
+    _dev=$(_neigh_dev "$_mac"); [ -n "$_dev" ] || _dev=br-lan
+    _prefixes=$(_lan_prefixes "$_dev")
+    if [ -n "$_prefixes" ]; then
+        _pool=$(printf '%s\n' "$_cands" | while IFS= read -r _a; do
+            [ -n "$_a" ] || continue
+            printf '%s\n' "$_prefixes" | grep -qx "$(_p64 "$_a")" && printf '%s\n' "$_a"
+        done)
+        if [ -n "$_pool" ]; then
+            _cands=$_pool
+        else
+            log_warn "host6: 候选均不在当前 LAN 前缀 [$(printf '%s' "$_prefixes" | tr '\n' ' ')] 内，改用未过滤候选"
+        fi
+    fi
+
+    # EUI-64（含 ff:fe）作为默认优先项排前
+    _cands=$( { printf '%s\n' "$_cands" | grep -i 'ff:fe'; printf '%s\n' "$_cands" | grep -iv 'ff:fe'; } | grep -v '^$')
+    log_info "host6: MAC=$_mac dev=$_dev 候选GUA=[$(printf '%s' "$_cands" | tr '\n' ' ')]"
 
     if [ -n "$_suffix" ]; then
         _want=$(match_suffix "$_cands" "$_suffix")
