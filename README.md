@@ -23,14 +23,28 @@
 
 ## 安装
 
-在路由器上（已 SSH/root）：
+在路由器上（已 SSH/root）。
+
+**一键直装**（自动从镜像源下载）：
+
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/koude/cfddns/main/install.sh)"
+```
+
+自定义间隔或镜像源（国内直连 GitHub 慢时）：
+
+```sh
+CFDDNS_INTERVAL=3 url=https://cdn.jsdelivr.net/gh/koude/cfddns@main \
+  sh -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/koude/cfddns@main/install.sh)"
+```
+
+**或本地安装**（先下载解压再装）：
 
 ```sh
 cd /tmp
 curl -L -o cfddns.tar.gz https://codeload.github.com/koude/cfddns/tar.gz/refs/heads/main
 tar -xzf cfddns.tar.gz 2>/dev/null || { gunzip -f cfddns.tar.gz && tar -xf cfddns.tar; }
-cd cfddns-main
-sh install.sh 5            # 安装到 /data/cfddns，cron 每 5 分钟
+cd cfddns-main && sh install.sh 5
 ```
 
 安装只做两件写操作：复制文件到 `/data/cfddns`、往 `/etc/crontabs/root` 加一行（加前自动备份为 `*.cfddns.bak`）。
