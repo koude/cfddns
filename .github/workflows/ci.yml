@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        run: |
+          shellcheck --version
+          shellcheck -s sh install.sh scripts/*.sh
+
+      - name: 变量紧挨中文检测（旧 shell 乱码防回归）
+        run: |
+          hits=$(perl -CSD -ne 'print "$ARGV:$.: $_" if /\$[A-Za-z_][A-Za-z0-9_]*[\x{3000}-\x{9fff}\x{ff00}-\x{ffef}]/' install.sh scripts/*.sh || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "发现变量紧挨中文字符，请改用 \${var} 形式"
+            exit 1
+          fi
+          echo "OK：无变量粘连"

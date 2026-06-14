@@ -80,7 +80,11 @@ menu_record() {
         case "$m_c" in
             1) menu_record_add; _pause ;;
             2) printf '输入要删除的序号: '; read -r m_v
-               printf '%s' "$m_v" | grep -qE '^[0-9]+$' && record_del_index "$m_v" && log_ok "已删除第 ${m_v} 条" || log_warn "无效序号"
+               if printf '%s' "$m_v" | grep -qE '^[0-9]+$'; then
+                   record_del_index "$m_v" && log_ok "已删除第 ${m_v} 条"
+               else
+                   log_warn "无效序号"
+               fi
                _pause ;;
             0) return ;;
         esac
@@ -162,7 +166,7 @@ menu_main() {
         printf '  3) 立即更新\n'
         printf '  4) 定时与服务\n'
         printf '  5) 状态与日志\n'
-        printf '  6) 在线更新（Phase 4）\n'
+        printf '  6) 在线更新\n'
         printf '  7) 卸载\n'
         printf '  0) 退出\n'
         printf '请选择: '; read -r m_c
@@ -172,7 +176,11 @@ menu_main() {
             3) menu_run ;;
             4) menu_service ;;
             5) menu_status ;;
-            6) echo "在线更新将在 Phase 4 提供。"; _pause ;;
+            6) echo
+               if update_check; then
+                   _yesno "确认现在更新？" && update_run
+               fi
+               _pause ;;
             7) menu_uninstall ;;
             0) echo "再见。"; return 0 ;;
             *) ;;

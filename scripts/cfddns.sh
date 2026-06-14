@@ -11,8 +11,8 @@ prog="$0"
 if command -v readlink >/dev/null 2>&1; then
     rl=$(readlink -f "$prog" 2>/dev/null) && [ -n "$rl" ] && prog="$rl"
 fi
-SCRIPTS_DIR=$(CDPATH= cd -- "$(dirname -- "$prog")" && pwd) || exit 1
-CFDDNS_ROOT=$(CDPATH= cd -- "$SCRIPTS_DIR/.." && pwd) || exit 1
+SCRIPTS_DIR=$(CDPATH='' cd -- "$(dirname -- "$prog")" && pwd) || exit 1
+CFDDNS_ROOT=$(CDPATH='' cd -- "$SCRIPTS_DIR/.." && pwd) || exit 1
 export CFDDNS_ROOT
 
 # --- 载入模块 ---------------------------------------------------------------
@@ -22,6 +22,7 @@ export CFDDNS_ROOT
 . "$SCRIPTS_DIR/cloudflare.sh"
 . "$SCRIPTS_DIR/core.sh"
 . "$SCRIPTS_DIR/service.sh"
+. "$SCRIPTS_DIR/update.sh"
 . "$SCRIPTS_DIR/menu.sh"
 
 usage() {
@@ -44,8 +45,9 @@ cfddns $(read_version) —— Cloudflare DDNS
                               添加一条记录
   record del <序号>           删除指定序号的记录
   uninstall                   移除 cron（程序文件保留，提示如何彻底删除）
-  menu                        交互式菜单（Phase 3）
-  update                      在线更新（Phase 4）
+  menu                        交互式菜单
+  update                      在线更新（从 UPDATE_MIRROR 拉取，保留配置）
+  check-update                仅检查是否有新版本
 
 配置文件: $CONFIG_FILE
 记录文件: $RECORDS_FILE
@@ -135,7 +137,8 @@ case "$cmd" in
     version|-v|--version)  echo "cfddns $(read_version)" ;;
     help|-h|--help|"")     usage ;;
     menu)                  menu_main ;;
-    update)                echo "在线更新将在 Phase 4 提供。" ;;
+    update)                update_run ;;
+    check-update)          update_check ;;
     uninstall)
         service_cron_remove
         echo "已移除 cron。程序文件仍在 ${CFDDNS_ROOT}；如需彻底删除：rm -rf ${CFDDNS_ROOT}"

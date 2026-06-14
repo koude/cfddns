@@ -22,7 +22,7 @@ is_ipv6() { case "$1" in *:*) return 0 ;; *) return 1 ;; esac; }
 
 is_mac() { printf '%s' "$1" | grep -qiE '^([0-9a-f]{2}:){5}[0-9a-f]{2}$'; }
 
-normalize_mac() { printf '%s' "$1" | tr 'A-Z' 'a-z'; }
+normalize_mac() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 
 # ---------------------------------------------------------------------------
 # wan4：路由器公网 IPv4 出口

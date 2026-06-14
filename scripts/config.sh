@@ -6,7 +6,7 @@
 # 全局配置（config 文件，KEY="value" 形式，可被 source）
 # ---------------------------------------------------------------------------
 DEFAULT_INTERVAL=5
-DEFAULT_MIRROR="https://raw.githubusercontent.com/USER/cfddns/main"
+DEFAULT_MIRROR="https://raw.githubusercontent.com/koude/cfddns/main"
 
 config_load() {
     # 默认值

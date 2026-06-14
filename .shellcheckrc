@@ -1,0 +1,5 @@
+# cfddns shellcheck 配置
+shell=sh
+# 这些脚本通过 cfddns.sh 在运行期相对路径 source，静态分析无法跟随：
+#   SC1090/SC1091 无法跟随 source；SC2034 跨文件使用的变量被误判为未用
+disable=SC1090,SC1091,SC2034

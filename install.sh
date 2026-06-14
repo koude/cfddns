@@ -5,7 +5,7 @@
 # 只写 /data 目录 + crontab，绝不碰网络/防火墙；可用 `cfddns.sh uninstall` 卸载。
 set -e
 
-SRC=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SRC=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 INSTALL_DIR=${CFDDNS_INSTALL_DIR:-/data/cfddns}
 INTERVAL=${1:-5}
 

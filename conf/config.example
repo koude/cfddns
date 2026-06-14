@@ -15,4 +15,4 @@ CF_ZONE_NAME=""
 INTERVAL="5"
 
 # 在线更新镜像源（raw 根地址，结尾不带 /）
-UPDATE_MIRROR="https://raw.githubusercontent.com/USER/cfddns/main"
+UPDATE_MIRROR="https://raw.githubusercontent.com/koude/cfddns/main"
