@@ -62,7 +62,9 @@ cmd_config() {
     case "$_sub" in
         set)
             _k=$1
-            [ -n "$_k" ] && [ $# -ge 2 ] || die "用法: cfddns config set <KEY> <VALUE>（KEY: ${CONFIG_KEYS}）"
+            if [ -z "$_k" ] || [ $# -lt 2 ]; then
+                die "用法: cfddns config set <KEY> <VALUE>（KEY: ${CONFIG_KEYS}）"
+            fi
             config_key_valid "$_k" || die "未知配置键: ${_k}（可设: ${CONFIG_KEYS}）"
             shift
             _v=$*
@@ -104,8 +106,9 @@ cmd_record() {
             ;;
         add)
             _name=$1; _type=$2; _src=$3; _param=$4; _ttl=${5:-60}; _prox=${6:-false}
-            [ -n "$_name" ] && [ -n "$_type" ] && [ -n "$_src" ] \
-                || die "用法: cfddns record add <name> <A|AAAA> <wan4|host6> [param] [ttl] [proxied]"
+            if [ -z "$_name" ] || [ -z "$_type" ] || [ -z "$_src" ]; then
+                die "用法: cfddns record add <name> <A|AAAA> <wan4|host6> [param] [ttl] [proxied]"
+            fi
             case "$_type" in A|AAAA) ;; *) die "type 只能是 A 或 AAAA" ;; esac
             case "$_src"  in wan4|host6) ;; *) die "source 只能是 wan4 或 host6" ;; esac
             if [ "$_src" = host6 ] && [ -z "$_param" ]; then

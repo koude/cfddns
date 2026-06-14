@@ -3,7 +3,7 @@
 # 由 cfddns.sh 调用（menu_main）。复用 config/record/core/service 各函数。
 # 全程 POSIX/busybox ash；菜单临时变量统一加 m_ 前缀，避免覆盖被调用函数的内部变量。
 
-_clear() { command -v clear >/dev/null 2>&1 && clear || printf '\n\n'; }
+_clear() { if command -v clear >/dev/null 2>&1; then clear; else printf '\n\n'; fi; }
 _pause() { printf '\n按回车继续...'; read -r m_dummy; }
 _yesno() {
     printf '%s [y/N]: ' "$1"; read -r m_ans

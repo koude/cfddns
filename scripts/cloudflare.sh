@@ -18,7 +18,11 @@ cf_api() {
 # 从响应里取第一条错误信息（用于日志）
 cf_errmsg() {
     _m=$(printf '%s' "$1" | json_str message)
-    [ -n "$_m" ] && printf '%s' "$_m" || printf '未知错误（响应: %.120s）' "$1"
+    if [ -n "$_m" ]; then
+        printf '%s' "$_m"
+    else
+        printf '未知错误（响应: %.120s）' "$1"
+    fi
 }
 
 # 校验 Token 是否有效
