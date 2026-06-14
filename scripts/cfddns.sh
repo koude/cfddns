@@ -22,6 +22,7 @@ export CFDDNS_ROOT
 . "$SCRIPTS_DIR/cloudflare.sh"
 . "$SCRIPTS_DIR/core.sh"
 . "$SCRIPTS_DIR/service.sh"
+. "$SCRIPTS_DIR/menu.sh"
 
 usage() {
     cat <<EOF
@@ -120,7 +121,11 @@ cmd_record() {
     esac
 }
 
-cmd=${1:-help}
+cmd=${1:-}
+if [ -z "$cmd" ]; then
+    # 裸调用：交互终端进菜单，否则显示帮助
+    if [ -t 0 ]; then cmd=menu; else cmd=help; fi
+fi
 [ $# -gt 0 ] && shift
 
 case "$cmd" in
@@ -129,7 +134,7 @@ case "$cmd" in
     record)                cmd_record "$@" ;;
     version|-v|--version)  echo "cfddns $(read_version)" ;;
     help|-h|--help|"")     usage ;;
-    menu)                  echo "菜单 TUI 将在 Phase 3 提供。" ;;
+    menu)                  menu_main ;;
     update)                echo "在线更新将在 Phase 4 提供。" ;;
     uninstall)
         service_cron_remove

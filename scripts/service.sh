@@ -51,3 +51,44 @@ service_cron_remove() {
 service_cron_status() {
     [ -f "$CRONTAB_FILE" ] && grep -q "$CRON_TAG" "$CRONTAB_FILE"
 }
+
+# ---------------------------------------------------------------------------
+# 全局命令 cfddns（opt-in，往 /etc/profile 写一个带标记的 alias 块）
+# PROFILE_FILE 可用环境变量覆盖（便于测试）。
+# ---------------------------------------------------------------------------
+PROFILE_FILE="${PROFILE_FILE:-/etc/profile}"
+SHORTCUT_BEGIN="# cfddns-shortcut-begin"
+SHORTCUT_END="# cfddns-shortcut-end"
+
+_shortcut_strip() {
+    [ -f "$PROFILE_FILE" ] || return 0
+    _tmp="$PROFILE_FILE.tmp.$$"
+    awk -v b="$SHORTCUT_BEGIN" -v e="$SHORTCUT_END" '
+        $0==b { skip=1; next }
+        $0==e { skip=0; next }
+        !skip { print }
+    ' "$PROFILE_FILE" >"$_tmp" && mv -f "$_tmp" "$PROFILE_FILE"
+}
+
+service_shortcut_install() {
+    touch "$PROFILE_FILE" 2>/dev/null || { log_error "无法写入 $PROFILE_FILE"; return 1; }
+    cp -f "$PROFILE_FILE" "$PROFILE_FILE.cfddns.bak" 2>/dev/null
+    _shortcut_strip
+    {
+        printf '%s\n' "$SHORTCUT_BEGIN"
+        printf "alias cfddns='%s/scripts/cfddns.sh'\n" "$CFDDNS_ROOT"
+        printf '%s\n' "$SHORTCUT_END"
+    } >>"$PROFILE_FILE"
+    log_ok "已安装全局命令 cfddns（写入 ${PROFILE_FILE}，重新登录后生效）"
+}
+
+service_shortcut_remove() {
+    [ -f "$PROFILE_FILE" ] || { log_info "未安装全局命令"; return 0; }
+    cp -f "$PROFILE_FILE" "$PROFILE_FILE.cfddns.bak" 2>/dev/null
+    _shortcut_strip
+    log_ok "已移除全局命令（已登录的会话可 unalias cfddns 或重新登录）"
+}
+
+service_shortcut_status() {
+    [ -f "$PROFILE_FILE" ] && grep -q "$SHORTCUT_BEGIN" "$PROFILE_FILE"
+}
